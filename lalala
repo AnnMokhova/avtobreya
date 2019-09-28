@@ -1,1 +1,139 @@
+corpora = {}
 
+futureisnow = []
+eternalclassic = []
+ukrlit_memes = []
+ukrainer_net = []
+amanzohel = []
+barg_kurumk_culture = []
+
+for post in posts:
+    post_id = post['id']
+    owner_id = post['owner_id']
+    comments = vk.wall.getComments(owner_id=owner_id, 
+                                   post_id=post_id, count=100)
+    comments = comments['items']
+    for comment in comments:
+        if 'deleted' in comment:
+                continue
+        if len(comment['text']) > 10:
+            text = comment['text']
+        if owner_id == -111587102:
+            futureisnow.append(text) 
+        if owner_id == -129440544:
+            eternalclassic.append(text) 
+        if owner_id == -131348832:
+            ukrlit_memes.append(text)
+        if owner_id == -5164516:
+            ukrainer_net.append(text)
+        if owner_id == -66347916:
+            amanzohel.append(text)
+        if owner_id == -95189895:
+            barg_kurumk_culture.append(text)
+        
+com = []
+com.append(futureisnow)
+com.append(eternalclassic)
+com.append(ukrlit_memes)
+com.append(ukrainer_net)
+com.append(amanzohel)
+com.append(barg_kurumk_culture)
+
+print(len(com))
+
+corpora = dict(zip(publics, com))
+
+print(corpora)    
+
+
+
+
+
+
+from sklearn import pipeline
+from sklearn import naive_bayes
+import numpy as np
+
+%pylab inline
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+clf = pipeline.Pipeline([
+    ('vctr', feature_extraction.text.TfidfVectorizer(ngram_range=(1, 2), analyzer='char')),
+    ('clf', naive_bayes.MultinomialNB())
+])
+
+
+
+all_texts = []
+lang_indices = []
+for lang in wiki_texts:
+    all_texts.extend(wiki_texts[lang])
+    lang_indices.extend([lang]*len(wiki_texts[lang]))
+    
+    
+    
+  # Обучаем классификатор
+clf.fit(np.array(all_texts), np.array(lang_indices))
+
+
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+
+lang_detects_freqs = {}
+
+for key, value in corpora.items():
+    public = key
+    texts = str(value)
+    lang_detects_freqs = dict(simple_lang_detect(freq_lists, texts))
+    #print(lang_detects_freqs)
+    print('Доли языков среди комментариев для паблика', key)
+    print(lang_detects_freqs)
+    Y = [c[1] for c in sorted(
+        lang_detects_freqs.items(), key=lambda x: x[0], reverse=False
+        )
+        ]
+    X = sorted([l for l in lang_detects_freqs])
+    plt.bar(X, Y, color='aqua')
+    plt.show()
+    
+    
+lang_detects_ngrams = {}
+
+for key, value in corpora.items():
+    public = key
+    texts = value
+    results = clf.predict(texts)
+    print(len(results))
+    ru = 0
+    en = 0
+    uk = 0
+    bxr = 0
+    for i in results:
+        if i == 'ru':
+            ru += 1
+        if i == 'en':
+            en += 1
+        if i == 'uk':
+            uk  += 1
+        if i == 'bxr':
+            bxr += 1
+            
+    lang_detects_ngrams['bxr'] = bxr
+    lang_detects_ngrams['en'] = en
+    lang_detects_ngrams['ru'] = ru
+    lang_detects_ngrams['uk'] = uk
+    
+    print(lang_detects_ngrams)
+    
+    print('Доли языков среди комментариев для паблика', key)
+    print(lang_detects_freqs)
+    Y = [c[1] for c in sorted(
+        lang_detects_ngrams.items(), key=lambda x: x[0], reverse=False
+        )
+        ]
+    X = sorted([l for l in lang_detects_ngrams])
+    plt.bar(X, Y, color='aqua')
+    plt.show()
