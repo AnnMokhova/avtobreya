@@ -1,0 +1,119 @@
+# Задает классы символов (три типа гласных объединяются в общий клас; класс гласных и согласных объединяется в класс букв)
+define Consonant b | c | d | f | g | h | j | k | l | m | n | p | q | r | s | t | v | w | x | z ;
+define FrontVowel ä | ö | y ;
+define NeutralVowel e | i ;
+define BackVowel a | o | u ;
+define Vowel FrontVowel | NeutralVowel | BackVowel | A | E;
+define Letter Vowel | Consonant;
+
+# Задает классы с наименованиями падежей и числа
+define Case "+Nom" | "+Gen" | "+Part" | "+In" | "+All" | "+El" | "+Ad" | "+Abl" | "+Il" | "+IlPl" ;
+define Number "+Sg" | "+Pl" ; 
+
+# Определяет типы основ (задние и передние) и понятие основы (набор из любого количества любых букв)
+define FrontStem [Consonant* [ FrontVowel | NeutralVowel ] ]+ Consonant*;
+define BackStem [Consonant* [ BackVowel | NeutralVowel ] ]* [Consonant* BackVowel] [Consonant* [ BackVowel | NeutralVowel ] ]* Consonant*;
+define Stem Letter+;
+
+define Input Stem Number Case;
+
+# Задает выражение номинатива (нулевое окончание в ед.числе, -t во мн. числе)
+define NomPl "+Pl" "+Nom" -> "^" t || _ ;
+define NomSg "+Sg" "+Nom" -> "^" || _ ;
+define Nominatives NomPl .o. NomSg ;
+
+# Задает выражение генитива (-den для основ на дифтонги и долгие согласные)
+define GenDen "+Gen" -> d e n || Vowel Vowel "+Pl" _ ;
+define Gen "+Gen" -> E n || _ ;
+define Genetive GenDen .o. Gen ;
+
+# Задает выражение остальных падежей (партитива и локативных: инессива и аллатива)
+define PartTa "+Part" -> t A || [ Consonant Vowel Vowel | Consonant ] Number _ ;
+define PartA "+Part" -> A || _ ;
+
+# Опечатка в коде: неправильное образование аллатива, окончание должно быть -lle
+# Добавлено выражение элатива (+El), адессива (+Ad), аблатива (+Abl)
+define LocativeCases "+In" -> s s A , "+All" -> l l e, "+El" -> s t A, "+Ad" -> l l A, "+Abl" -> l t A || _ ;
+
+# Добавлено выражение иллатива (+Il)
+
+# Задает выражение единственного числа в иллативе
+
+define IlA "+Sg" "+Il" -> "^" a n || Consonant a _ ;
+define IlO "+Sg" "+Il" -> "^" o n || Consonant o _ ;
+define IlU "+Sg" "+Il" -> "^" u n || Consonant u _ ;
+define IlE "+Sg" "+Il" -> "^" e n || Consonant e _ ;
+define IlI "+Sg" "+Il" -> "^" i n || Consonant i _ ;
+define IlÄ "+Sg" "+Il" -> "^" ä n || Consonant ä _ ;
+define IlÖ "+Sg" "+Il" -> "^" ö n || Consonant ö _ ;
+define IlY "+Sg" "+Il" -> "^" y n || Consonant y _ ;
+
+# Это очень странная часть, здесь задается множественное число для иллатива, но так как для этого нам нужно рассматривать
+# форму множественного числа, а не начальную лексему, во входном файле записаны формы уже во множественном числе :)))
+
+define IlHvn "+IlPl" -> "^" h i n || Vowel Vowel "+Sg" _ ;
+define IlVn "+IlPl" -> "^" i n || Consonant Vowel "+Sg" _ ;
+
+# Задает выражение единственного и множественного числа иллатива для основ на долгие гласные
+
+define IlAaSg "+Sg" "+Il" -> "^" s e e n || a a _ ;
+define IlAaPl "+Il" -> "^" s i i n || a a "+Pl" _ ;
+define IlOoSg "+Sg" "+Il" -> "^" s e e n || o o _  ;
+define IlOoPl "+Il" -> "^" s i i n || o o "+Pl" _ ;
+define IlUuSg "+Sg" "+Il" -> "^" s e e n || u u _  ;
+define IlUuPl "+Il" -> "^" s i i n || u u "+Pl" _ ;
+define IlEeSg "+Sg" "+Il" -> "^" s e e n || e e _ ;
+define IlEePl "+Il" -> "^" s i i n || e e "+Pl" _ ;
+define IlIiSg "+Sg" "+Il" -> "^" s e e n || i i _ ;
+define IlIiPl "+Il" -> "^" s i i n || i i "+Pl" _ ;
+define IlÄäSg "+Sg" "+Il" -> "^" s e e n || ä ä _ ;
+define IlÄäPl "+Il" -> "^" s i i n || ä ä "+Pl" _ ;
+define IlÖöSg "+Sg" "+Il" -> "^" s e e n || ö ö _  ;
+define IlÖöPl "+Il" -> "^" s i i n || ö ö "+Pl" _ ;
+define IlYySg "+Sg" "+Il" -> "^" s e e n || y y _  ;
+define IlYyPl "+Il" -> "^" s i i n || y y "+Pl" _ ;
+
+define IllativeLongVowels IlAaSg .o. IlAaPl .o. IlOoSg .o. IlOoPl .o. IlUuSg .o. IlUuPl .o. IlEeSg .o. IlEePl .o. IlIiSg .o. IlIiPl .o. IlÄäSg .o. IlÄäPl .o. IlÖöSg .o. IlÖöPl .o. IlYySg .o. IlYyPl ;
+
+define Illatives IlA .o. IlO .o. IlU .o. IlE .o. IlI .o. IlÄ .o. IlÖ .o. IlY .o. IlHvn .o. IlVn .o. IllativeLongVowels ;
+
+define OtherCases PartTa .o. PartA .o. LocativeCases .o. Illatives; 
+
+# Задает правила образования множественного числа
+define Sg "+Sg" -> "^" || _ ;
+define OmitA ä -> 0, i -> 0 || _ "+Pl";
+define Ai2Oi a -> o || [ a | e | i ] Vowel* Consonant+ _ "+Pl";
+define Ai2i a -> 0 || [ o | u ] Vowel* Consonant+ _ "+Pl";
+define OmitFirst Vowel -> 0 || _ Vowel "+Pl" Consonant;
+define Pl "+Pl" -> "^" i || _ ;
+
+define NumberInfl Sg .o. OmitA .o. Ai2i .o. Ai2Oi .o. OmitFirst .o. Pl ;
+
+# Задает чередование i на j во множественном числе между гласными; правила на чередование гласных переднего и заднего ряда
+define JotPl i -> j || Vowel "^"* _ "^"* Vowel ;
+define HarmonyBack A -> a || BackStem "^" Letter* _;
+define HarmonyFront A -> ä || FrontStem "^" Letter* _;
+
+define Phonetics JotPl .o. HarmonyBack .o. HarmonyFront ;
+
+# Задает правила чередования согласных в основе
+define DoublePTK p p -> p , t t -> t , k k -> k || Letter _ "^"* Vowel "^"* Consonant [ .#. | Consonant ] ;
+define SingleP p -> v || Vowel _ "^"* Vowel "^"* Consonant [ .#. | Consonant ] ;
+define SingleTK t -> d , k -> 0 || Letter _ "^"* Vowel "^"* Consonant [ .#. | Consonant ] ; 
+define TwoLetter m p -> m m , n t -> n n , n k -> n g , l t -> l l , r t -> r r || Letter _ "^"* Vowel "^"* Consonant [ .#. | Consonant ] ;
+define ThreeLetter l k e -> l j e , r k e -> r j e , h k e -> h j e , u k u -> u v u || Letter _ "^"* Consonant [ .#. | Consonant ] ;
+define N2M i n -> i m , t ö n -> t t ö m || _ "^" Vowel;
+define EOmit E -> 0 || Vowel "^" _;
+define EReal E -> e || _;
+
+define Alternations N2M  .o. EOmit .o. EReal .o. ThreeLetter .o. TwoLetter .o. SingleP .o. SingleTK .o. DoublePTK ;
+
+# Объединение всех обозначенных ранее аффиксов
+define Affixes Nominatives .o. Genetive .o. OtherCases .o. NumberInfl .o. Alternations .o. Phonetics;
+
+# Удаление символа границы морфем 
+define Cleanup "^" -> 0 || _ ;
+
+# Объединение всех грамматических правил в одну грамматику финского языка
+define Grammar Input .o. Affixes .o. Cleanup ;
+push Grammar
